@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>music web</title>
+    <link rel="stylesheet" href="main.css">
+</head>
+<body>
+    <div class="playlist-container">
+        <h2 class="playlist-title">我的收藏歌单</h2>
+        <!-- 歌单列表容器 -->
+        <ul class="song-list" id="songList"></ul>
+    </div>
+    <h1 id="head1">UDP_Ctrl</h1>
+    <div id="d1">
+        <button id="start" class="bg_blue">开始播放</button>
+        <button id="stop" class="bg_blue">暂停播放</button>
+    </div>
+    <div id="d2">
+        <button id="last" class="bg_blue">上一首</button>
+        <button id="next" class="bg_blue">下一首</button>
+    </div>
+    <div id="d3">
+        <button id="singlecircle" class="bg_blue">单曲循环</button>
+        <button id="listcircle" class="bg_blue">列表循环</button>
+        <button id="random" class="bg_blue">随机播放</button>
+    </div>
+    <div id="d4">
+        <input type="text" id="ip" placeholder="输入ip地址">
+        <input type="text" id="port" placeholder="输入端口号">
+    </div>
+    <div id="d5">
+        <button id="link" class="bg_blue">LINK</button>
+    </div>
+    
+</body>
+<script src="app.js"></script>
+</html>
