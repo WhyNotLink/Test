@@ -11,49 +11,98 @@ document.addEventListener('DOMContentLoaded',function(){
     const btn6 = document.getElementById('singlecircle');
     const btn7 = document.getElementById('listcircle');
     const btn8 = document.getElementById('random');
+    const btn9 = document.getElementById('songlist_get');
 
-
-     const playlistData = [
-            { id: 1, name: "晴天", singer: "周杰伦", duration: "4:29" },
-            { id: 2, name: "花海", singer: "周杰伦", duration: "4:24" },
-            { id: 3, name: "小幸运", singer: "田馥甄", duration: "4:25" },
-            { id: 4, name: "起风了", singer: "买辣椒也用券", duration: "5:23" },
-            { id: 5, name: "稻香", singer: "周杰伦", duration: "3:43" },
-            { id: 6, name: "水星记", singer: "郭顶", duration: "5:25" }
+    const playlistData = [
+            { id: 1, name: "晴天"},
+            { id: 2, name: "花海" },
+            { id: 3, name: "小幸运"},
+            { id: 4, name: "起风了"},
+            { id: 5, name: "稻香"},
+            { id: 6, name: "水星记"}
         ];
 
-    const songListEl = document.getElementById("songList");
+    const songListElement = document.getElementById("songList");
 
-    function renderPlaylist() {
-        songListEl.innerHTML = "";
-        playlistData.forEach(song => {
-            const liEl = document.createElement("li");
-            liEl.className = "song-item";
-            liEl.dataset.songId = song.id;
-            liEl.innerHTML = `
-                <div class="song-info">
-                    <span class="song-name">${song.name}</span>
-                    <span class="song-singer">${song.singer}</span>
-                </div>
-                <span class="song-duration">${song.duration}</span>
-            `;
+    // playlistData.forEach((song, index) => {
+    //     const li = document.createElement("li");
+    //     li.textContent = `${song.name}`;
+    //     li.dataset.songId = song.id;
+    //     li.dataset.soneName = song.name;
+    //     songListElement.appendChild(li);
+    // });
+    // songListElement.addEventListener("click", function(event) {
+    //     if(event.target.nodeName === "LI") {
+    //         const songId = event.target.dataset.songId;
+    //         const songName = event.target.dataset.soneName;
+    //         alert(`准备播放：${songName} (ID: ${songId})`);
+    //         console.log("点击的歌曲详情：", { id: songId, name: songName });
 
-            liEl.addEventListener("click", function() {
-                document.querySelectorAll(".song-item").forEach(item => {
-                    item.classList.remove("active");
+
+    //         const sendMsg = 'song:' + songId;
+    //         webSocket.send(sendMsg);
+    //         console.log('已发送消息到中转服务器：', sendMsg);
+
+    //     }
+    // });
+
+
+
+
+    function loadSongListFromJson() {
+        fetch('./udp-proxy-serve/linux_messages.json')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`请求失败：${response.status} ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(playlistData => {
+                songListElement.innerHTML = '';
+
+                if (!Array.isArray(playlistData) || playlistData.length === 0) {
+                    songListElement.innerHTML = '<li>暂无歌单数据</li>';
+                    console.log('歌单JSON文件为空或格式错误');
+                    return;
+                }
+
+                playlistData.forEach((song, index) => {
+                    if (!song.id || !song.name) {
+                        console.warn(`第${index+1}条歌单数据无效（缺少id/name）：`, song);
+                        return;
+                    }
+                    const li = document.createElement("li");
+                    li.textContent = `${song.name}`;
+                    li.dataset.songId = song.id;
+                    li.dataset.songName = song.name; 
+                    songListElement.appendChild(li);
                 });
-                this.classList.add("active");
-                const songId = this.dataset.songId;
-                const targetSong = playlistData.find(item => item.id == songId);
-                showTip(`你点击了：${targetSong.name} - ${targetSong.singer}`);
-                console.log("点击的歌曲详情：", targetSong);
+            })
+            .catch(error => {
+                songListElement.innerHTML = '<li>加载歌单失败</li>';
+                console.error('加载歌单JSON失败：', error);
             });
-            songListEl.appendChild(liEl);
-        });
     }
 
-    
 
+    songListElement.addEventListener("click", function(event) {
+        if(event.target.nodeName === "LI") {
+            const songId = event.target.dataset.songId;
+            const songName = event.target.dataset.songName; 
+            if (!songId || !songName) return; 
+            
+            alert(`准备播放：${songName} (ID: ${songId})`);
+            console.log("点击的歌曲详情：", { id: songId, name: songName });
+
+            if (webSocket && webSocket.readyState === WebSocket.OPEN) {
+                const sendMsg = 'song:' + songId;
+                webSocket.send(sendMsg);
+                console.log('已发送消息到中转服务器：', sendMsg);
+            } else {
+                alert('未连接到中转服务器，无法发送播放指令！');
+            }
+        }
+    });
 
 
 
@@ -104,7 +153,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
         if(linkflag==1)
         {
-            webSocket = new WebSocket('ws://127.0.0.1:8080');
+            webSocket = new WebSocket('ws://127.0.0.1:8001');//这是本机tcp与udp传输的端口
             webSocket.onopen = () => {
                 alert('已连接中转服务器');
                 const linuxConfig = JSON.stringify({
@@ -117,8 +166,6 @@ document.addEventListener('DOMContentLoaded',function(){
         
             webSocket.onerror = (err) => {
                 linkflag = 0;
-                this.classList.toggle('bg_blue');
-                this.classList.toggle('bg_red');
                 alert('连接中转服务器失败！');
                 console.error('WebSocket错误:', err);
                 webSocket = null;
@@ -216,6 +263,17 @@ document.addEventListener('DOMContentLoaded',function(){
         console.log('已发送消息到中转服务器：', sendMsg);
 
     })
-    
+    btn9.addEventListener('click',function(){
+        const sendMsg = 'l'
+        webSocket.send(sendMsg);
+        console.log('获取歌单：', sendMsg);
+        setTimeout(function() {
+            loadSongListFromJson(); 
+        }, 1000);
+
+    })
+
+
+
 
 })

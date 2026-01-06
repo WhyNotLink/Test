@@ -18,7 +18,11 @@
 #define BUF_SIZE 32    // UDP接收缓冲区大小
 pid_t child_pid = -1; // 保存子进程PID
 
+static const char *DEST_IP = "172.16.46.155";
+static const int DEST_PORT = 8889;
+
 void* udp_receive_thread(void* arg);
+void send_song_json_udp();
 
 int main()
 {
@@ -262,6 +266,22 @@ void* udp_receive_thread(void* arg)
                     kill(child_pid, SIGRTMIN+1);
                 }
                 break;
+            case 'l': // 对应 获取歌单
+                printf("UDP指令：获取歌单\n");
+                send_song_json_udp();
+                break;
+            case 's':
+                savename();
+                playing_or_not();
+                if(playing_flag)
+                {
+                    sprintf(song_buf,"killall -9 madplay aplay");
+                    system(song_buf);
+                }
+                now = song[5];
+                sprintf(song_buf,"madplay -o wav:- /root/System_project/mp3/ %s 2> /dev/null | aplay 2>/dev/null &",song[now]); 
+	            system(song_buf);
+            
             default:
                 printf("UDP无效指令：%c，仅支持a/g\n", recv_buf[0]);
                 break;
@@ -271,4 +291,59 @@ void* udp_receive_thread(void* arg)
     // 实际循环不会退出，此处为语法完整性
     close(udp_socket_fd);
     pthread_exit(NULL);
+}
+
+void send_song_json_udp(){
+
+    int sockfd;
+    struct sockaddr_in dest_addr;
+
+    char* json = (char*)malloc(1024 * sizeof(char));
+    strcpy(json, "[");
+    for (int i=0; i< all; i++) 
+    {
+        char obj[128]; 
+        if(song[i]!=NULL){
+            snprintf(obj, sizeof(obj), "{\"id\":%d,\"name\":\"%s\"}", i, song[i]);
+            strcat(json, obj);
+            if (i != all - 1) {
+                strcat(json, ",");
+            }else{
+                strcat(json, "]");
+            }
+        }
+    }
+    // const char *json = "[{\"id\":1,\"name\":\"晴天\"},{\"id\":2,\"name\":\"花海吗\"},{\"id\":99}]";
+    
+    // 创建 UDP socket
+    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sockfd < 0) {
+        perror("socket");
+        return -1;
+    }
+
+    memset(&dest_addr, 0, sizeof(dest_addr));
+    dest_addr.sin_family = AF_INET;
+    dest_addr.sin_port = htons(DEST_PORT);
+    dest_addr.sin_addr.s_addr = inet_addr(DEST_IP);
+
+    printf("Sending JSON to %s:%d\n", DEST_IP, DEST_PORT);
+
+    ssize_t sent = sendto(sockfd,
+                          json,
+                          strlen(json),
+                          0,
+                          (struct sockaddr *)&dest_addr,
+                          sizeof(dest_addr));
+    if (sent < 0) {
+        perror("sendto");
+        close(sockfd);
+        return -1;
+    }
+
+    printf("Sent %zd bytes: %s\n", sent, json);
+
+    close(sockfd);
+    return 0;
+
 }
