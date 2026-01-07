@@ -236,7 +236,7 @@ void last_play_music(int sig)
 }
 
 void next_play_music(int sig)
-{	printf("test");
+{	
 	savename();
 	playing_or_not();
 	if(playing_flag)

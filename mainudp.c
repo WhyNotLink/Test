@@ -41,20 +41,14 @@ int main()
     }
     else if (child_pid == 0)
     {
-        // signal(20, test_connect);
-        // signal(4, play_singlecircle_music);
-        // signal(5, play_listcircle_music);
-        // signal(6, play_random_music);
-        // signal(7, last_play_music);
-        // signal(8, next_play_music);
             
-        signal(SIGUSR1, test_connect);                // 测试连接（替换原信号20）
-        signal(SIGUSR2, play_singlecircle_music);     // 单曲循环（替换原信号4）
-        signal(SIGRTMIN+0, play_listcircle_music);    // 列表循环（替换原信号5，实时信号）
-        signal(SIGRTMIN+1, play_random_music);        // 随机播放（替换原信号6，实时信号）
-        signal(SIGRTMIN+2, last_play_music);          // 上一首歌（替换原信号7，实时信号，支持多次触发）
-        signal(SIGRTMIN+3, next_play_music);          // 下一首歌（替换原信号8，实时信号，支持多次触发）
-        signal(SIGINT, SIG_IGN);
+        signal(SIGUSR1, test_connect);                // 测试连接
+        signal(SIGUSR2, play_singlecircle_music);     // 单曲循环
+        signal(SIGRTMIN+0, play_listcircle_music);    // 列表循环
+        signal(SIGRTMIN+1, play_random_music);        // 随机播放
+        signal(SIGRTMIN+2, last_play_music);          // 上一首歌
+        signal(SIGRTMIN+3, next_play_music);          // 下一首歌
+        signal(SIGINT, SIG_IGN);                      // 忽略Ctrl+C中断信号
         signal(SIGTERM, SIG_IGN);
         
         while (1)
