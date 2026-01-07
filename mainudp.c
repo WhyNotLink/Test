@@ -278,12 +278,20 @@ void* udp_receive_thread(void* arg)
                     sprintf(song_buf,"killall -9 madplay aplay");
                     system(song_buf);
                 }
-                now = song[5];
+                char *colon_pos = strchr(recv_buf,':');
+                if(colon_pos == NULL){
+                    now=0;
+                }else{
+                    now = atoi(colon_pos + 1);
+                    if(now < 0 || now >= all){
+                        now = 0;
+                    }
+                }
                 sprintf(song_buf,"madplay -o wav:- /root/System_project/mp3/ %s 2> /dev/null | aplay 2>/dev/null &",song[now]); 
 	            system(song_buf);
-            
+                break;
             default:
-                printf("UDP无效指令：%c，仅支持a/g\n", recv_buf[0]);
+                printf("UDP无效指令：%c，仅支持a/g/s/l\n", recv_buf[0]);
                 break;
         }
     }
